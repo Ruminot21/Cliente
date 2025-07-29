@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Eventos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+  <style>
+    body {
+      font-family: 'Urbanist', sans-serif;
+      background: #111;
+      color: #fff;
+      padding: 20px;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 5px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+    }
+    .event-card {
+      background: #222;
+      margin-top: 10px;
+      padding: 10px;
+      border-left: 5px solid #ff0077;
+    }
+    button {
+      background-color: #ff0077;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h2>🎟️ Compra tus entradas</h2>
+  <input id="nombreUsuario" type="text" placeholder="Tu nombre" />
+  <input id="correoUsuario" type="email" placeholder="Tu correo" />
+  <div id="eventos"></div>
+</div>
+
+<script>
+  function render() {
+    const eventos = JSON.parse(localStorage.getItem('eventos') || "[]");
+    const cont = document.getElementById('eventos');
+    cont.innerHTML = '';
+
+    if (eventos.length === 0) {
+      cont.innerHTML = "<p>No hay eventos disponibles actualmente.</p>";
+      return;
+    }
+
+    eventos.forEach(ev => {
+      cont.innerHTML += `
+        <div class="event-card">
+          <img src="${ev.img}" width="100%" /><br/>
+          <strong>${ev.name}</strong><br/>
+          ${ev.desc}<br/>
+          Valor: $${ev.price}<br/>
+          Disponibles: ${ev.qty}<br/>
+          <input type="number" id="qty-${ev.id}" placeholder="Cantidad a comprar" />
+          <button onclick="comprar('${ev.id}', '${ev.name}', ${ev.price})">Pagar con MercadoPago</button>
+        </div>
+      `;
+    });
+  }
+
+  function comprar(id, nombreEvento, precioEvento) {
+    const nombre = document.getElementById('nombreUsuario').value;
+    const correo = document.getElementById('correoUsuario').value;
+    const eventos = JSON.parse(localStorage.getItem('eventos'));
+    const evento = eventos.find(e => e.id === id);
+    const cantidad = parseInt(document.getElementById('qty-' + id).value);
+
+    if (!nombre || !correo || !cantidad || cantidad <= 0 || cantidad > evento.qty) {
+      alert("Completa todos los datos correctamente");
+      return;
+    }
+
+    evento.qty -= cantidad;
+    localStorage.setItem('eventos', JSON.stringify(eventos));
+
+    const entradas = JSON.parse(localStorage.getItem('entradas') || "[]");
+    for (let i = 0; i < cantidad; i++) {
+      const qr = `QR-${evento.id}-${Math.floor(Math.random() * 999999)}`;
+      entradas.push({ qr, nombre: evento.name, usuario: nombre, correo });
+    }
+    localStorage.setItem('entradas', JSON.stringify(entradas));
+
+    const mp = new MercadoPago('YOUR_PUBLIC_KEY', {
+        locale: 'es-ES'
+    });
+
+    const preference = {
+        items: [
+            {
+                title: nombreEvento,
+                unit_price: precioEvento,
+                quantity: cantidad,
+            },
+        ],
+        back_urls: {
+            success: "http://localhost/success",
+            failure: "http://localhost/failure",
+            pending: "http://localhost/pending",
+        },
+        auto_return: "approved",
+    };
+
+    mp.createPreference(preference).then(function (response) {
+        window.open(response.body.init_point, '_blank');
+    }).catch(function (error) {
+        console.error(error);
+        alert("Hubo un error al crear el pago.");
+    });
+
+    render();
+  }
+
+  render();
+</script>
+</body>
+</html>
