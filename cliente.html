@@ -93,7 +93,7 @@
     }
     localStorage.setItem('entradas', JSON.stringify(entradas));
 
-    const mp = new MercadoPago('YOUR_PUBLIC_KEY', {
+    const mp = new MercadoPago('APP_USR-e2f4cd0e-007a-4134-834c-5f783e2862cc', {
         locale: 'es-ES'
     });
 
@@ -106,7 +106,7 @@
             },
         ],
         back_urls: {
-            success: "http://localhost/success",
+            success: "https://ruminot21.github.io/Cliente/",
             failure: "http://localhost/failure",
             pending: "http://localhost/pending",
         },
