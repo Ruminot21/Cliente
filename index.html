@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5,6 +6,8 @@
   <title>Eventos</title>
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;700&display=swap" rel="stylesheet" />
   <script src="https://sdk.mercadopago.com/js/v2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script> <!-- Incluir QRCode.js -->
   <style>
     body {
       font-family: 'Urbanist', sans-serif;
@@ -35,6 +38,9 @@
       font-weight: bold;
       cursor: pointer;
     }
+    #qrcode {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -43,6 +49,7 @@
   <input id="nombreUsuario" type="text" placeholder="Tu nombre" />
   <input id="correoUsuario" type="email" placeholder="Tu correo" />
   <div id="eventos"></div>
+  <div id="qrcode" style="display:none;"></div>
 </div>
 
 <script>
@@ -115,12 +122,30 @@
 
     mp.createPreference(preference).then(function (response) {
         window.open(response.body.init_point, '_blank');
+        generateQRCode(entradas[entradas.length - 1].qr); // Generar QR para la última entrada
+        sendEmail(correo, entradas[entradas.length - 1].qr); // Enviar correo con el QR
     }).catch(function (error) {
         console.error(error);
         alert("Hubo un error al crear el pago.");
     });
 
     render();
+  }
+
+  function generateQRCode(qrCode) {
+    const qrcodeContainer = $('#qrcode');
+    qrcodeContainer.empty(); // Limpiar el contenedor
+    qrcodeContainer.qrcode({
+      text: qrCode,
+      width: 128,
+      height: 128,
+    });
+    qrcodeContainer.show(); // Mostrar el QR
+  }
+
+  function sendEmail(correo, qrCode) {
+    // Aquí puedes implementar la lógica para enviar el correo con el QR.
+    alert(`Un correo con tu QR (${qrCode}) ha sido enviado a ${correo}.`);
   }
 
   render();
